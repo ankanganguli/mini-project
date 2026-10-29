@@ -109,8 +109,8 @@ class TextInferenceService:
                 clf = pipeline.named_steps["classifier"]
                 X = feats.transform([cleaned])
                 dot = float((X @ clf.coef_.T)[0, 0])
-                # Neutralize WELFake's +1.0504 Reuters-dateline intercept bias
-                logit = (dot - 0.65) * 0.80
+                # Neutralize WELFake's +1.0504 Reuters/NYT-byline bias (Fake 25th-percentile dot is +1.65)
+                logit = (dot - 1.65) * 0.70
             else:
                 proba = pipeline.predict_proba([cleaned])[0]
                 p_raw = float(np.clip(proba[1], 1e-4, 1.0 - 1e-4))

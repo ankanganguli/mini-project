@@ -1,14 +1,15 @@
 """
 Live Fact-Checking & Encyclopedic Claim Verification Service
 ============================================================
-Verifies factual claims (sports results, awards, historical events, political
-offices, scientific facts, biographical claims, geography) in real time using
+Verifies factual claims and paragraphs (sports results, awards, biographies,
+political offices, scientific facts, geography, history) in real time using
 Wikipedia's official MediaWiki API (en.wikipedia.org/w/api.php):
   1. Encyclopedic Myth / Pseudoscience / Conspiracy Theory Detection
   2. Award / Championship / Tournament Winner Verification ("X won Y")
   3. Office / Role / Capital / Superlative Verification ("X is the <role> of Y")
-  4. Location / Profession / Founder / Creator Verification ("X is in Y", "X founded Y")
-  5. Biographical & Scientific Contradiction Analysis (Dead/Alive, East/West)
+  4. Biographical & Entity Definition Verification ("X is a/an <profession/description>")
+  5. Location / Founder / Creator Verification ("X is in Y", "X founded Y")
+  6. Paragraph & Multi-Sentence Wikipedia Evidence Corroboration
 """
 import json
 import logging
@@ -32,7 +33,8 @@ _CLAIM_NORMALIZATIONS = [
 _STOPWORDS = {
     "the", "a", "an", "in", "on", "at", "of", "for", "to", "from", "by", "with",
     "and", "or", "is", "was", "are", "were", "has", "have", "had", "been", "be",
-    "won", "win", "wins", "winner", "that", "this", "it", "as", "his", "her", "their"
+    "won", "win", "wins", "winner", "that", "this", "it", "as", "his", "her", "their",
+    "who", "which", "he", "she", "they", "one", "also", "known", "considered", "best"
 }
 
 _DEBUNK_MARKERS = re.compile(
@@ -59,16 +61,13 @@ def _clean_tokens(text: str) -> List[str]:
 class LiveFactCheckService:
     """
     Retrieves live encyclopedic evidence from Wikipedia and evaluates whether
-    a factual claim is supported, contradicted (fake), or unverified.
+    a factual claim or biographical/encyclopedic paragraph is supported or contradicted.
     """
 
     def is_factual_claim(self, text: str) -> bool:
         words = text.strip().split()
-        if len(words) < 3 or len(words) > 100:
-            return False
-        if len(words) <= 40:
-            return True
-        return False
+        # Support everything from 3-word claims up to 250-word multi-sentence paragraphs
+        return 3 <= len(words) <= 250
 
     def _wiki_search_and_extracts(self, query: str, limit: int = 3) -> List[Dict[str, str]]:
         """
@@ -76,7 +75,7 @@ class LiveFactCheckService:
         """
         results: List[Dict[str, str]] = []
         try:
-            search_q = " ".join(query.strip().split()[:16])
+            search_q = " ".join(query.strip().split()[:14])
             params = urllib.parse.urlencode({
                 "action": "query",
                 "list": "search",
@@ -107,7 +106,7 @@ class LiveFactCheckService:
                 "prop": "extracts",
                 "exintro": 1,
                 "explaintext": 1,
-                "exchars": 1200,
+                "exchars": 1400,
                 "redirects": 1,
                 "titles": "|".join(titles),
                 "format": "json",
@@ -136,18 +135,19 @@ class LiveFactCheckService:
         if not text:
             return ""
         s = re.split(r"(?<=[.!?])\s+", text.strip())
-        return s[0][:240] if s else text[:240]
+        return s[0][:260] if s else text[:260]
 
     def verify_claim(self, text: str) -> Optional[Dict[str, Any]]:
         """
-        Verifies a factual claim using live Wikipedia evidence and deterministic
-        encyclopedic rules.
+        Verifies a factual claim or biographical/encyclopedic paragraph using
+        live Wikipedia evidence and deterministic contradiction rules.
         """
         if not self.is_factual_claim(text):
             return None
 
         norm_claim = normalize_claim_text(text)
         lower_claim = norm_claim.lower()
+        first_sentence_claim = self._first_sentence(norm_claim)
         is_negated = bool(re.search(r"\b(never|not|didn'?t|hasn'?t|haven'?t|isn'?t|wasn'?t|myth|fake|hoax|false)\b", lower_claim))
 
         # ── 1. Instant High-Precision Checks (Common Factual Traps) ─────────
@@ -185,7 +185,7 @@ class LiveFactCheckService:
         # ── 2. Pattern A: "<Subject> won <Event/Award/Tournament>" ──────────
         won_match = re.match(
             r"^([a-zA-Z0-9éáíóúñüÉÁÍÓÚÑÜ\s.'-]+?)\s+(?:has\s+|have\s+)?(?:won|wins|is\s+the\s+winner\s+of|was\s+the\s+winner\s+of|won\s+the)\s+(?:the\s+)?(.+?)[.!?]*$",
-            norm_claim.strip(),
+            first_sentence_claim.strip(),
             re.IGNORECASE,
         )
         if won_match and not is_negated:
@@ -198,12 +198,10 @@ class LiveFactCheckService:
             subj_evidence = self._wiki_search_and_extracts(subj, limit=1)
 
             if obj_evidence:
-                # Primary event/award page extract (e.g. "2022 FIFA World Cup")
                 primary_obj_doc = obj_evidence[0]
                 obj_extract_lower = f"{primary_obj_doc['title']} {primary_obj_doc['extract']}".lower()
                 subj_in_obj_extract = all(t in obj_extract_lower for t in subj_tokens) if subj_tokens else False
 
-                # Check if Subject's own intro explicitly has a winning sentence with ALL obj_tokens
                 subj_won_sentence = False
                 if subj_evidence and obj_tokens:
                     subj_sentences = re.split(r"(?<=[.!?])\s+", subj_evidence[0]["extract"].lower())
@@ -226,14 +224,14 @@ class LiveFactCheckService:
                     ref_title = primary_obj_doc["title"]
                     return {
                         "is_fake": False,
-                        "p_fake": 0.12,
+                        "p_fake": 0.10,
                         "reason": f"Verified by Wikipedia ({ref_title}): {self._first_sentence(primary_obj_doc['extract'])}",
                     }
 
         # ── 3. Pattern B: "<Subject> is/was the <Role/Capital/Leader> of <Target>" ──
         role_match = re.match(
             r"^([a-zA-Z0-9éáíóúñüÉÁÍÓÚÑÜ\s.'-]+?)\s+(?:is|was|are)\s+(?:the\s+)?(capital|capital\s+city|president|prime\s+minister|king|queen|chancellor|ceo|chief\s+executive\s+officer|founder|co-founder|inventor|author|director|largest\s+city|tallest\s+mountain|longest\s+river|richest\s+person)\s+(?:of|in|for)\s+(.+?)[.!?]*$",
-            norm_claim.strip(),
+            first_sentence_claim.strip(),
             re.IGNORECASE,
         )
         if role_match and not is_negated:
@@ -249,21 +247,18 @@ class LiveFactCheckService:
             if not role_ev and not subj_ev:
                 return None
 
-            # Check ONLY the primary Role Wikipedia article extract (never mix with subject search)
             role_primary_extract = (role_ev[0]["extract"].lower() if role_ev else "")
             subj_intro = (subj_ev[0]["extract"].lower() if subj_ev else "")
             subj_first_sent = self._first_sentence(subj_intro)
 
             if "capital" in role:
-                # For capitals, check if Subject's first sentence explicitly says "capital (city) of <target>"
-                # and NOT "capital city of the ... state of <other>"
                 exact_cap_pattern = re.compile(
                     r"\bcapital(?:\s+city)?\s+of\s+(?:the\s+)?" + r"\s+".join(re.escape(t) for t in target_tokens) + r"\b",
                     re.IGNORECASE,
                 )
                 is_valid_capital = bool(exact_cap_pattern.search(subj_first_sent))
                 if not is_valid_capital:
-                    ref_doc = (subj_ev or role_ev)[0] if (subj_ev or role_ev) else {"title": target, "extract": ""}
+                    ref_doc = (subj_ev or role_ev)[0]
                     return {
                         "is_fake": True,
                         "p_fake": 0.92,
@@ -273,7 +268,7 @@ class LiveFactCheckService:
                     ref_doc = (subj_ev or role_ev)[0]
                     return {
                         "is_fake": False,
-                        "p_fake": 0.10,
+                        "p_fake": 0.08,
                         "reason": f"Confirmed by Wikipedia ({ref_doc['title']}): {self._first_sentence(ref_doc['extract'])}",
                     }
 
@@ -284,7 +279,7 @@ class LiveFactCheckService:
             ) if (subj_intro and target_tokens) else False
 
             if not subj_in_role_page and not role_in_subj_intro:
-                ref_doc = (subj_ev or role_ev)[0] if (subj_ev or role_ev) else {"title": role_query, "extract": ""}
+                ref_doc = (subj_ev or role_ev)[0]
                 return {
                     "is_fake": True,
                     "p_fake": 0.92,
@@ -294,25 +289,56 @@ class LiveFactCheckService:
                 ref_doc = (role_ev or subj_ev)[0]
                 return {
                     "is_fake": False,
-                    "p_fake": 0.10,
+                    "p_fake": 0.08,
                     "reason": f"Confirmed by Wikipedia ({ref_doc['title']}): {self._first_sentence(ref_doc['extract'])}",
                 }
 
-        # ── 4. Pattern C: "<Subject> founded / invented / discovered / located in <Object>" ──
+        # ── 4. Pattern C: "<Subject> is a/an <Profession/Identity/Definition>" (Biographical & Entity Paragraphs) ──
+        bio_match = re.match(
+            r"^([a-zA-Z0-9éáíóúñüÉÁÍÓÚÑÜ\s.'-]{2,45}?)\s+(?:\([^)]+\)\s+)?(?:is|was)\s+(?:a|an)\s+(.+?)[.!?]*$",
+            first_sentence_claim.strip(),
+            re.IGNORECASE,
+        )
+        if bio_match and not is_negated:
+            subj = bio_match.group(1).strip()
+            predicate_desc = bio_match.group(2).strip()
+            subj_ev = self._wiki_search_and_extracts(subj, limit=2)
+            if subj_ev:
+                primary_doc = subj_ev[0]
+                wiki_ext_lower = f"{primary_doc['title']} {primary_doc['extract']}".lower()
+                desc_tokens = _clean_tokens(predicate_desc)
+                if desc_tokens:
+                    matched_desc = sum(1 for t in desc_tokens if t in wiki_ext_lower)
+                    overlap_ratio = matched_desc / len(desc_tokens)
+                    if overlap_ratio >= 0.50:
+                        return {
+                            "is_fake": False,
+                            "p_fake": 0.08,
+                            "reason": f"Confirmed by Wikipedia ({primary_doc['title']}): {self._first_sentence(primary_doc['extract'])}",
+                        }
+                    elif overlap_ratio < 0.25 and len(desc_tokens) >= 2:
+                        return {
+                            "is_fake": True,
+                            "p_fake": 0.90,
+                            "reason": f"Contradicts Wikipedia ({primary_doc['title']}): {self._first_sentence(primary_doc['extract'])}",
+                        }
+
+        # ── 5. Pattern D: "<Subject> founded / invented / discovered / located in <Object>" ──
         rel_match = re.match(
             r"^([a-zA-Z0-9éáíóúñüÉÁÍÓÚÑÜ\s.'-]+?)\s+(?:was\s+|is\s+)?(founded|invented|discovered|created|built\s+in|located\s+in|situated\s+in|plays\s+for)\s+(.+?)[.!?]*$",
-            norm_claim.strip(),
+            first_sentence_claim.strip(),
             re.IGNORECASE,
         )
         if rel_match and not is_negated:
             subj = rel_match.group(1).strip()
-            verb = rel_match.group(2).strip().lower()
             obj = rel_match.group(3).strip()
             subj_tokens = _clean_tokens(subj)
             obj_tokens = _clean_tokens(obj)
 
             subj_ev = self._wiki_search_and_extracts(subj, limit=1)
             obj_ev = self._wiki_search_and_extracts(obj, limit=1)
+            if not subj_ev and not obj_ev:
+                return None
 
             subj_ext = (subj_ev[0]["extract"].lower() if subj_ev else "")
             obj_ext = (obj_ev[0]["extract"].lower() if obj_ev else "")
@@ -320,34 +346,55 @@ class LiveFactCheckService:
             obj_in_subj = all(t in subj_ext for t in obj_tokens) if (obj_tokens and subj_ext) else False
             subj_in_obj = all(t in obj_ext for t in subj_tokens) if (subj_tokens and obj_ext) else False
 
-            if (subj_ev or obj_ev) and not obj_in_subj and not subj_in_obj:
+            if not obj_in_subj and not subj_in_obj:
                 ref_doc = (subj_ev or obj_ev)[0]
                 return {
                     "is_fake": True,
                     "p_fake": 0.90,
                     "reason": f"Contradicts Wikipedia ({ref_doc['title']}): {self._first_sentence(ref_doc['extract'])}",
                 }
+            else:
+                ref_doc = (subj_ev or obj_ev)[0]
+                return {
+                    "is_fake": False,
+                    "p_fake": 0.10,
+                    "reason": f"Confirmed by Wikipedia ({ref_doc['title']}): {self._first_sentence(ref_doc['extract'])}",
+                }
 
-        # ── 5. Fetch General Evidence & Check Myth / Dead-Alive Hoaxes ──────
-        evidence = self._wiki_search_and_extracts(norm_claim, limit=3)
+        # ── 6. General Wikipedia Evidence & Paragraph Corroboration ─────────
+        evidence = self._wiki_search_and_extracts(first_sentence_claim, limit=3)
         if not evidence:
             return None
 
-        top_doc_text = f"{evidence[0]['title']} {evidence[0]['snippet']} {evidence[0]['extract'][:500]}"
+        top_doc = evidence[0]
+        top_doc_text = f"{top_doc['title']} {top_doc['snippet']} {top_doc['extract'][:600]}"
         if _DEBUNK_MARKERS.search(top_doc_text) and not is_negated:
             return {
                 "is_fake": True,
                 "p_fake": 0.94,
-                "reason": f"Wikipedia ({evidence[0]['title']}): {self._first_sentence(evidence[0]['extract'] or evidence[0]['snippet'])}",
+                "reason": f"Wikipedia ({top_doc['title']}): {self._first_sentence(top_doc['extract'] or top_doc['snippet'])}",
             }
 
         if re.search(r"\b(is\s+dead|died|passed\s+away|was\s+killed|assassinated)\b", lower_claim) and not is_negated:
-            first_extract = (evidence[0]["extract"] or "").lower()
+            first_extract = (top_doc["extract"] or "").lower()
             if re.search(r"\bis\s+a[n]?\s+", first_extract[:200]) and "died" not in first_extract[:350]:
                 return {
                     "is_fake": True,
                     "p_fake": 0.90,
-                    "reason": f"Wikipedia ({evidence[0]['title']}) biography uses present tense with no record of death.",
+                    "reason": f"Wikipedia ({top_doc['title']}) biography uses present tense with no record of death.",
+                }
+
+        # Check overall token overlap between the claim/paragraph and the top Wikipedia article
+        claim_tokens = _clean_tokens(norm_claim)
+        if len(claim_tokens) >= 6:
+            combined_wiki_lower = " ".join(f"{d['title']} {d['snippet']} {d['extract']}" for d in evidence[:2]).lower()
+            matched = sum(1 for t in set(claim_tokens) if t in combined_wiki_lower)
+            ratio = matched / len(set(claim_tokens))
+            if ratio >= 0.65:
+                return {
+                    "is_fake": False,
+                    "p_fake": 0.08,
+                    "reason": f"Corroborated by Wikipedia ({top_doc['title']}): {self._first_sentence(top_doc['extract'] or top_doc['snippet'])}",
                 }
 
         return None
