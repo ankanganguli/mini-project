@@ -1,0 +1,31 @@
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment files
+.env
+.env.local
+!.env.example
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Large datasets and binary artifacts
+*.parquet
+*.parquet.gzip
+*.tar.gz
+*.zip
+
+# IDE / Editor files
+.vscode/
+.idea/

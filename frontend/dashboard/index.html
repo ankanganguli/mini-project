@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeritiScan AI — Content Verification</title>
+  <script>
+    // Auth guard: bounce back to the login page if no active session.
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.replace('../login.html');
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <div>
+          <div class="brand-name">VeritiScan</div>
+          <div class="brand-ai">AI</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-page="dashboard"><span>⌂</span> Dashboard</button>
+        <button class="nav-item" data-page="analyze"><span>✦</span> New Analysis</button>
+        <button class="nav-item" data-page="history"><span>◷</span> History</button>
+        <button class="nav-item" data-page="reports"><span>▤</span> Reports</button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="mini-orb">✦</div>
+        <strong>Verify with clarity</strong>
+        <p>Analyze text, images and videos from one simple workspace.</p>
+        <button class="mini-btn" data-page="analyze">Start scanning →</button>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
+        <button class="nav-item" id="logoutBtn"><span>⏻</span> Log out</button>
+        <div class="profile">
+          <div class="avatar">AS</div>
+          <div><strong>Project User</strong><small>VeritiScan workspace</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">AI CONTENT VERIFICATION</div>
+          <h1 id="pageTitle">Good afternoon 👋</h1>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" title="Notifications">♧</button>
+          <button class="primary-btn" data-page="analyze">+ New Analysis</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="page active">
+        <div class="hero">
+          <div class="hero-copy">
+            <span class="pill">Multimodal verification</span>
+            <h2>What would you like<br><span>to verify today?</span></h2>
+            <p>Analyze text, images and videos with your trained AI models and understand the confidence behind each result.</p>
+            <button class="hero-btn" data-page="analyze">Start an analysis <span>→</span></button>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="float-card float-one"><span class="dot green"></span> Analysis ready</div>
+            <div class="scan-orb"><div class="orb-core">✦</div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div></div>
+            <div class="float-card float-two"><strong>87.4%</strong><span>confidence</span></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card blue"><div class="stat-icon">✦</div><div><span>Total analyses</span><strong>248</strong><small>+18 this week</small></div></article>
+          <article class="stat-card purple"><div class="stat-icon">Aa</div><div><span>Text scans</span><strong>102</strong><small>41% of analyses</small></div></article>
+          <article class="stat-card cyan"><div class="stat-icon">◉</div><div><span>Image scans</span><strong>87</strong><small>35% of analyses</small></div></article>
+          <article class="stat-card orange"><div class="stat-icon">▶</div><div><span>Video scans</span><strong>59</strong><small>24% of analyses</small></div></article>
+        </div>
+
+        <div class="content-grid">
+          <section class="panel recent-panel">
+            <div class="panel-head"><div><h3>Recent analyses</h3><p>Your latest verification activity</p></div><button class="text-btn" data-page="history">View all →</button></div>
+            <div id="recentList" class="analysis-list"></div>
+          </section>
+          <section class="panel score-panel">
+            <div class="panel-head"><div><h3>Confidence overview</h3><p>Demo data for the prototype</p></div></div>
+            <div class="donut-wrap"><div class="donut"><div><strong>82%</strong><span>average</span></div></div></div>
+            <div class="legend"><span><i class="blue-dot"></i> High confidence</span><span><i class="orange-dot"></i> Needs review</span></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="analyze" class="page">
+        <div class="section-intro"><span class="pill">New verification</span><h2>Choose what you want to analyze</h2><p>Start with text, an image, or a video. This prototype uses simulated results until the backend is connected.</p></div>
+        <div class="mode-grid">
+          <button class="mode-card selected" data-mode="text"><div class="mode-icon text">Aa</div><h3>Text</h3><p>Paste a claim, article, message or narrative for analysis.</p><span>Analyze text →</span></button>
+          <button class="mode-card" data-mode="image"><div class="mode-icon image">◉</div><h3>Image</h3><p>Upload an image and inspect the model confidence result.</p><span>Analyze image →</span></button>
+          <button class="mode-card" data-mode="video"><div class="mode-icon video">▶</div><h3>Video</h3><p>Upload a video and review the model's analysis result.</p><span>Analyze video →</span></button>
+        </div>
+
+        <div class="workspace panel">
+          <div class="workspace-head"><div><h3 id="inputTitle">Text to analyze</h3><p id="inputHint">Paste the content you want VeritiScan AI to examine.</p></div><span class="input-type" id="inputType">TEXT</span></div>
+          <div id="inputArea" class="input-area">
+            <textarea id="textInput" placeholder="Paste a news claim, message, article excerpt or any text you want to verify..."></textarea>
+            <div class="input-footer"><span id="charCount">0 characters</span><span>Demo mode</span></div>
+          </div>
+          <div id="fileArea" class="file-area hidden">
+            <input id="fileInput" type="file" accept="image/*,video/*">
+            <label for="fileInput" class="dropzone"><div class="upload-icon">↑</div><strong id="dropTitle">Drop your image here</strong><span>or click to browse from your device</span><small id="fileMeta">PNG, JPG, WEBP • Prototype limit 20 MB</small></label>
+            <div id="preview" class="preview hidden"></div>
+          </div>
+          <button id="analyzeBtn" class="analyze-btn">Analyze text <span>✦</span></button>
+        </div>
+      </section>
+
+      <section id="result" class="page">
+        <button class="back-btn" data-page="analyze">← Back to analysis</button>
+        <div class="result-hero panel">
+          <div class="result-copy"><span class="pill">Analysis complete</span><h2 id="resultLabel">Likely authentic</h2><p id="resultDescription">The model returned a high-confidence result for this submission.</p><div class="result-meta"><span id="resultType">TEXT</span><span>•</span><span id="resultTime">Just now</span></div></div>
+          <div class="confidence-ring" id="confidenceRing"><div><strong id="confidenceValue">87.4%</strong><span>confidence</span></div></div>
+        </div>
+        <div class="result-grid">
+          <section class="panel">
+            <div class="panel-head"><div><h3>Submission</h3><p>Content sent for analysis</p></div></div>
+            <div id="submissionPreview" class="submission-preview"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h3>Result details</h3><p>Values returned by the prototype model layer</p></div></div>
+            <div class="detail-rows">
+              <div><span>Confidence score</span><strong id="detailConfidence">87.4%</strong></div>
+              <div><span>Analysis type</span><strong id="detailType">Text</strong></div>
+              <div><span>Processing status</span><strong class="status-good">Completed</strong></div>
+              <div><span>Mode</span><strong>Prototype / Demo</strong></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="history" class="page">
+        <div class="section-intro row-intro"><div><span class="pill">Your activity</span><h2>Analysis history</h2><p>Review previous prototype analyses.</p></div><button class="primary-btn" data-page="analyze">+ New Analysis</button></div>
+        <section class="panel">
+          <div class="toolbar"><input id="historySearch" placeholder="Search analyses..."><select id="historyFilter"><option value="all">All types</option><option value="Text">Text</option><option value="Image">Image</option><option value="Video">Video</option></select></div>
+          <div id="historyList" class="history-table"></div>
+        </section>
+      </section>
+
+      <section id="reports" class="page">
+        <div class="section-intro"><span class="pill">Insights</span><h2>Reports</h2><p>A future home for downloadable forensic-style analysis reports.</p></div>
+        <div class="empty-state panel"><div class="empty-icon">▤</div><h3>Reports will grow here</h3><p>Once the backend provides persistent analysis records and report data, this area can generate detailed reports for each scan.</p><button class="primary-btn" data-page="analyze">Run an analysis</button></div>
+      </section>
+
+      <section id="settings" class="page">
+        <div class="section-intro"><span class="pill">Workspace</span><h2>Settings</h2><p>Prototype preferences and application information.</p></div>
+        <div class="settings-grid">
+          <section class="panel setting-card"><h3>Appearance</h3><p>Light, colorful interface is enabled for the prototype.</p><div class="setting-line"><span>Reduce animations</span><label class="switch"><input type="checkbox"><i></i></label></div><div class="setting-line"><span>Compact cards</span><label class="switch"><input type="checkbox"><i></i></label></div></section>
+          <section class="panel setting-card"><h3>About VeritiScan AI</h3><p>Multimodal synthetic media and fake-content verification prototype based on the project's planned text, image and video analysis workflow.</p><div class="about-chip">Frontend prototype v0.1</div></section>
+        </div>
+      </section>
+
+      <div id="toast" class="toast">Analysis complete</div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

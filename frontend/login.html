@@ -1,0 +1,255 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="VeritiScan secure sign-in and account registration."
+    />
+    <title>VeritiScan — Sign in to verify</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236c62ec'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial' font-size='38' font-weight='700' fill='white'%3EV%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./login.css" />
+  </head>
+  <body>
+    <main class="auth-page">
+      <div class="ambient ambient-left"></div>
+      <div class="ambient ambient-right"></div>
+
+      <div class="page-shell">
+        <header class="topbar">
+          <a class="brand" href="#" aria-label="VeritiScan home">
+            <span class="brand-mark">V<span class="brand-dot"></span></span>
+            <span class="brand-copy">
+              <strong>VeritiScan</strong>
+              <small>AI verification</small>
+            </span>
+          </a>
+
+          <button class="preview-toggle" id="preview-toggle" type="button">
+            <span class="panel-icon" aria-hidden="true"></span>
+            <span id="preview-toggle-label">Back to dashboard</span>
+          </button>
+        </header>
+
+        <div class="content-grid" id="content-grid">
+          <section
+            class="workspace-column"
+            id="workspace-preview"
+            aria-label="VeritiScan workspace preview"
+          >
+            <div class="workspace-heading">
+              <span class="workspace-heading-icon" aria-hidden="true">⌁</span>
+              <span>
+                <strong>Your verification workspace</strong>
+                <small>A quick look at what awaits inside</small>
+              </span>
+            </div>
+
+            <div class="dashboard-preview">
+              <aside class="dashboard-sidebar">
+                <div class="mini-brand">
+                  <span class="mini-brand-mark">V<span></span></span>
+                  <span>
+                    <strong>VeritiScan</strong>
+                    <small>AI verification</small>
+                  </span>
+                </div>
+
+                <nav class="dashboard-nav" aria-label="Preview navigation">
+                  <a class="active" href="#dashboard">● <span>Dashboard</span></a>
+                  <a href="#analysis">● <span>New analysis</span></a>
+                  <a href="#history">● <span>History</span></a>
+                  <a href="#reports">● <span>Reports</span></a>
+                </nav>
+
+                <div class="verify-card">
+                  <span class="verify-icon">♢</span>
+                  <strong>Verify with clarity</strong>
+                  <p>One calm workspace for every signal.</p>
+                </div>
+              </aside>
+
+              <div class="dashboard-main">
+                <div class="dashboard-topline">
+                  <div>
+                    <span>AI content verification</span>
+                    <h2>Good afternoon</h2>
+                  </div>
+                  <div class="dashboard-actions">
+                    <span class="profile-dot"></span>
+                    <button type="button">+ New analysis</button>
+                  </div>
+                </div>
+
+                <div class="dashboard-hero">
+                  <div class="hero-copy">
+                    <span class="hero-pill">✧ &nbsp; Multimodal verification</span>
+                    <h3>What would you like <em>to verify today?</em></h3>
+                    <p>
+                      Analyze text, images, and videos with confidence in one
+                      focused workspace.
+                    </p>
+                    <button type="button">Start an analysis <span>→</span></button>
+                  </div>
+                  <div class="confidence-orbit" aria-hidden="true">
+                    <span class="orbit orbit-one"></span>
+                    <span class="orbit orbit-two"></span>
+                    <span class="orbit-core">✦</span>
+                    <strong>87.4% <small>confidence</small></strong>
+                  </div>
+                </div>
+
+                <div class="stat-grid">
+                  <div class="stat-card"><span class="stat-icon violet">✦</span><span><small>Total analyses</small><strong>248</strong></span></div>
+                  <div class="stat-card"><span class="stat-icon lavender">Aa</span><span><small>Text scans</small><strong>102</strong></span></div>
+                  <div class="stat-card"><span class="stat-icon cyan">◉</span><span><small>Image scans</small><strong>87</strong></span></div>
+                  <div class="stat-card"><span class="stat-icon amber">▶</span><span><small>Video scans</small><strong>59</strong></span></div>
+                </div>
+
+                <div class="dashboard-bottom">
+                  <div class="recent-card">
+                    <div class="card-heading"><span><strong>Recent analyses</strong><small>Your latest verification activity</small></span><b>↗</b></div>
+                    <div class="analysis-row"><span><i>Aa</i>News claim sample</span><strong>92.3%</strong></div>
+                    <div class="analysis-row"><span><i>Im</i>Portrait sample</span><strong>88.1%</strong></div>
+                    <div class="analysis-row"><span><i>Tx</i>Product review</span><strong>92.3%</strong></div>
+                  </div>
+                  <div class="confidence-card">
+                    <strong>Confidence overview</strong>
+                    <small>Across your workspace</small>
+                    <div class="confidence-ring"><span>82%<small>clear</small></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="auth-column">
+            <div class="auth-card">
+              <div class="auth-view" id="view-sign-in">
+                <div class="auth-header">
+                  <span class="eyebrow">Welcome to VeritiScan</span>
+                  <h1>Sign in to verify</h1>
+                  <p>Bring text, images, and videos into one calm place for clearer answers.</p>
+                </div>
+
+                <div class="notice success-notice" id="sign-in-notice" role="status" hidden></div>
+
+                <form id="sign-in-form" novalidate>
+                  <label class="field">
+                    <span>Email or phone</span>
+                    <span class="input-wrap">
+                      <span class="field-icon" aria-hidden="true">✉</span>
+                      <input id="login-identifier" name="identifier" autocomplete="username" placeholder="you@gmail.com or +1 555 010 2030" />
+                    </span>
+                    <small class="field-error" data-error-for="identifier"></small>
+                  </label>
+
+                  <label class="field">
+                    <span>Password</span>
+                    <span class="input-wrap">
+                      <span class="field-icon" aria-hidden="true">▣</span>
+                      <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" />
+                      <button class="password-toggle" type="button" data-password-toggle="login-password" aria-label="Show password">◉</button>
+                    </span>
+                    <small class="field-error" data-error-for="password"></small>
+                  </label>
+
+                  <div class="form-options">
+                    <label class="check-label"><input id="remember-me" type="checkbox" checked /> <span>Remember me</span></label>
+                    <button class="text-button" type="button" data-open-view="forgot">Forgot password?</button>
+                  </div>
+
+                  <button class="primary-button" type="submit">Sign in <span>→</span></button>
+                </form>
+
+                <div class="divider"><span>or continue with</span></div>
+                <button class="google-button" id="google-button" type="button"><span>G</span> Continue with Google</button>
+                <p class="switch-copy">New to VeritiScan? <button class="text-button" type="button" data-open-view="register">Create an account</button></p>
+              </div>
+
+              <div class="auth-view" id="view-register" hidden>
+                <button class="back-button" type="button" data-open-view="sign-in">← &nbsp; Back to sign in</button>
+                <div class="auth-header">
+                  <span class="eyebrow">Welcome to VeritiScan</span>
+                  <h1>Create your account</h1>
+                  <p>Set up your personal verification workspace in less than a minute.</p>
+                </div>
+
+                <form id="register-form" novalidate>
+                  <div class="register-grid">
+                    <label class="field"><span>Username</span><span class="input-wrap"><span class="field-icon">♙</span><input name="username" placeholder="e.g. maya.chen" /></span><small class="field-error" data-error-for="username"></small></label>
+                    <label class="field"><span>Full name</span><span class="input-wrap"><span class="field-icon">♧</span><input name="fullName" placeholder="Maya Chen" /></span><small class="field-error" data-error-for="fullName"></small></label>
+                    <label class="field"><span>Phone number</span><span class="input-wrap"><span class="field-icon">⌕</span><input name="phone" type="tel" placeholder="+1 555 010 2030" /></span><small class="field-error" data-error-for="phone"></small></label>
+                    <label class="field"><span>Gmail or email</span><span class="input-wrap"><span class="field-icon">✉</span><input name="email" type="email" placeholder="you@gmail.com" /></span><small class="field-error" data-error-for="email"></small></label>
+                    <label class="field"><span>Date of birth</span><span class="input-wrap"><span class="field-icon">▣</span><input name="dateOfBirth" type="date" /></span><small class="field-error" data-error-for="dateOfBirth"></small></label>
+                    <label class="field"><span>Personal interests</span><span class="input-wrap"><span class="field-icon">✧</span><input name="interests" placeholder="News, research, design" /></span><small class="field-error" data-error-for="interests"></small></label>
+                    <label class="field full-field"><span>Password</span><span class="input-wrap"><span class="field-icon">▣</span><input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" /><button class="password-toggle" type="button" data-password-toggle="register-password">◉</button></span><small class="field-error" data-error-for="register-password"></small></label>
+                    <label class="field full-field"><span>Confirm password</span><span class="input-wrap"><span class="field-icon">▣</span><input id="register-password-confirm" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password" /><button class="password-toggle" type="button" data-password-toggle="register-password-confirm">◉</button></span><small class="field-error" data-error-for="confirmPassword"></small></label>
+                  </div>
+                  <button class="primary-button" type="submit">Create account <span>→</span></button>
+                </form>
+                <p class="legal-copy">By continuing, you agree to keep your verification work private and secure.</p>
+              </div>
+
+              <div class="auth-view" id="view-forgot" hidden>
+                <button class="back-button" type="button" data-open-view="sign-in">← &nbsp; Back to sign in</button>
+                <div class="auth-header">
+                  <span class="eyebrow">Welcome to VeritiScan</span>
+                  <h1>Reset your password</h1>
+                  <p>We’ll send a one-time verification code to the email or phone on your account.</p>
+                </div>
+                <div class="notice info-notice">ⓘ <span>No account changes happen in this prototype until you verify the code.</span></div>
+                <form id="forgot-form" novalidate>
+                  <label class="field"><span>Email or phone</span><span class="input-wrap"><span class="field-icon">✉</span><input name="resetIdentifier" placeholder="you@gmail.com or +1 555 010 2030" /></span><small class="field-error" data-error-for="resetIdentifier"></small></label>
+                  <button class="primary-button" type="submit">Send demo code <span>→</span></button>
+                </form>
+                <p class="switch-copy">Remembered your password? <button class="text-button" type="button" data-open-view="sign-in">Return to sign in</button></p>
+              </div>
+
+              <div class="auth-view" id="view-otp" hidden>
+                <button class="back-button" type="button" data-open-view="forgot">← &nbsp; Back to reset</button>
+                <div class="auth-header">
+                  <span class="eyebrow">Welcome to VeritiScan</span>
+                  <h1>Check your code</h1>
+                  <p>Enter the six-digit code sent to <span id="otp-recipient">your contact</span>.</p>
+                </div>
+                <div class="notice otp-notice">▣ <span>Demo code: <strong>426190</strong> <small>— safe to use for this preview</small></span></div>
+                <form id="otp-form" novalidate>
+                  <span class="otp-label">Verification code</span>
+                  <div class="otp-grid">
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 1" />
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 2" />
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 3" />
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 4" />
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 5" />
+                    <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Verification digit 6" />
+                  </div>
+                  <small class="field-error otp-error" id="otp-error"></small>
+                  <div class="otp-options"><span id="countdown">Code expires in 00:45</span><button class="text-button" id="resend-button" type="button" disabled>↻ &nbsp;Resend code</button></div>
+                  <button class="primary-button" type="submit">Verify code <span>✓</span></button>
+                </form>
+              </div>
+            </div>
+            <div class="privacy-note">♢ &nbsp; Your content stays private and in your control.</div>
+          </section>
+        </div>
+
+        <footer class="footer">
+          <span>© 2025 VeritiScan</span><i></i><span>Built for clearer decisions</span><i></i><span>▣ &nbsp;Secure entry</span>
+        </footer>
+      </div>
+    </main>
+    <script src="./login.js"></script>
+  </body>
+</html>
