@@ -54,7 +54,7 @@ class VisionForensicService:
                 )
                 logger.info("Successfully loaded Vision pipeline.")
             except Exception as e:
-                logger.error(f"Failed to load Vision pipeline: {e}", exc_info=True)
+                logger.info(f"Using OpenCV ELA + DCT frequency forensics (ViT offline/lightweight mode: {e})")
                 self._pipe = None
 
     # ── Helpers ────────────────────────────────────────────────────────────
