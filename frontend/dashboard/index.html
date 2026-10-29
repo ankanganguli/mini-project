@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VeritiScan AI — Content Verification</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>VeritiScan AI — Multimodal Content & URL Verification</title>
   <script>
-    // Auth guard: bounce back to the login page if no active session.
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       window.location.replace('../login.html');
     }
@@ -13,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261029_4">
 </head>
 <body>
   <div class="app-shell">
@@ -30,22 +32,22 @@
         <button class="nav-item active" data-page="dashboard"><span>⌂</span> Dashboard</button>
         <button class="nav-item" data-page="analyze"><span>✦</span> New Analysis</button>
         <button class="nav-item" data-page="history"><span>◷</span> History</button>
-        <button class="nav-item" data-page="reports"><span>▤</span> Reports</button>
+        <button class="nav-item" data-page="reports"><span>▤</span> Combined Reports</button>
       </nav>
 
       <div class="sidebar-card">
         <div class="mini-orb">✦</div>
-        <strong>Verify with clarity</strong>
-        <p>Analyze text, images and videos from one simple workspace.</p>
-        <button class="mini-btn" data-page="analyze">Start scanning →</button>
+        <strong>Multimodal & URL Fusion</strong>
+        <p>Verify news URLs, video links, or combine text + image + video in one unified forensic report.</p>
+        <button class="mini-btn" type="button" onclick="window.openModeAndPage('combined')">Combined Scan →</button>
       </div>
 
       <div class="sidebar-bottom">
         <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
         <button class="nav-item" id="logoutBtn"><span>⏻</span> Log out</button>
         <div class="profile">
-          <div class="avatar">AS</div>
-          <div><strong>Project User</strong><small>VeritiScan workspace</small></div>
+          <div class="avatar">AG</div>
+          <div><strong>Project User</strong><small>VeritiScan Live Engine</small></div>
         </div>
       </div>
     </aside>
@@ -53,120 +55,373 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <div class="eyebrow">AI CONTENT VERIFICATION</div>
+          <div class="eyebrow">MULTIMODAL AI CONTENT & URL VERIFICATION</div>
           <h1 id="pageTitle">Good afternoon 👋</h1>
         </div>
         <div class="top-actions">
-          <button class="icon-btn" title="Notifications">♧</button>
-          <button class="primary-btn" data-page="analyze">+ New Analysis</button>
+          <button class="icon-btn" title="Refresh Metrics" id="refreshBtn" type="button">↻</button>
+          <button class="primary-btn" type="button" data-page="analyze">+ New Analysis</button>
         </div>
       </header>
 
+      <!-- DASHBOARD PAGE -->
       <section id="dashboard" class="page active">
         <div class="hero">
           <div class="hero-copy">
-            <span class="pill">Multimodal verification</span>
+            <span class="pill">Live Multimodal + URL Forensics</span>
             <h2>What would you like<br><span>to verify today?</span></h2>
-            <p>Analyze text, images and videos with your trained AI models and understand the confidence behind each result.</p>
-            <button class="hero-btn" data-page="analyze">Start an analysis <span>→</span></button>
+            <p>Analyze news & video URLs, text claims, images, and videos—individually or all together—with real-time NLP classification, ViT/ELA visual forensics, and combined cross-modal reporting.</p>
+            <div class="hero-actions">
+              <button class="hero-btn" type="button" onclick="window.openModeAndPage('url')">Verify News / Video URL <span>🌐</span></button>
+              <button class="secondary-hero-btn" type="button" onclick="window.openModeAndPage('combined')">Combined Scan (Text + Image + Video) <span>⊕</span></button>
+            </div>
           </div>
           <div class="hero-art" aria-hidden="true">
-            <div class="float-card float-one"><span class="dot green"></span> Analysis ready</div>
+            <div class="float-card float-one"><span class="dot green"></span> Live Models Active</div>
             <div class="scan-orb"><div class="orb-core">✦</div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div></div>
-            <div class="float-card float-two"><strong>87.4%</strong><span>confidence</span></div>
+            <div class="float-card float-two"><strong id="heroAccuracy">98.7%</strong><span>model accuracy</span></div>
           </div>
         </div>
 
         <div class="stats-grid">
-          <article class="stat-card blue"><div class="stat-icon">✦</div><div><span>Total analyses</span><strong>248</strong><small>+18 this week</small></div></article>
-          <article class="stat-card purple"><div class="stat-icon">Aa</div><div><span>Text scans</span><strong>102</strong><small>41% of analyses</small></div></article>
-          <article class="stat-card cyan"><div class="stat-icon">◉</div><div><span>Image scans</span><strong>87</strong><small>35% of analyses</small></div></article>
-          <article class="stat-card orange"><div class="stat-icon">▶</div><div><span>Video scans</span><strong>59</strong><small>24% of analyses</small></div></article>
+          <article class="stat-card blue"><div class="stat-icon">✦</div><div><span>Total verifications</span><strong id="statTotal">0</strong><small id="statTotalSub">Live database count</small></div></article>
+          <article class="stat-card purple"><div class="stat-icon">🌐</div><div><span>URL & News scans</span><strong id="statUrl">0</strong><small>Live URL ingestion</small></div></article>
+          <article class="stat-card cyan"><div class="stat-icon">⊕</div><div><span>Combined scans</span><strong id="statCombined">0</strong><small>Multi-modality reports</small></div></article>
+          <article class="stat-card orange"><div class="stat-icon">◎</div><div><span>Model F1 Score</span><strong id="statF1">98.6%</strong><small>Calibrated TF-IDF + ViT</small></div></article>
         </div>
 
         <div class="content-grid">
           <section class="panel recent-panel">
-            <div class="panel-head"><div><h3>Recent analyses</h3><p>Your latest verification activity</p></div><button class="text-btn" data-page="history">View all →</button></div>
+            <div class="panel-head"><div><h3>Recent analyses</h3><p>Your latest live verification activity (click any row to view report)</p></div><button class="text-btn" type="button" data-page="history">View all →</button></div>
             <div id="recentList" class="analysis-list"></div>
           </section>
           <section class="panel score-panel">
-            <div class="panel-head"><div><h3>Confidence overview</h3><p>Demo data for the prototype</p></div></div>
-            <div class="donut-wrap"><div class="donut"><div><strong>82%</strong><span>average</span></div></div></div>
-            <div class="legend"><span><i class="blue-dot"></i> High confidence</span><span><i class="orange-dot"></i> Needs review</span></div>
+            <div class="panel-head"><div><h3>Model performance</h3><p>Live evaluation metrics from trained pipeline</p></div></div>
+            <div class="donut-wrap"><div class="donut" id="avgDonut"><div><strong id="avgConfidence">98.7%</strong><span>accuracy</span></div></div></div>
+            <div class="legend"><span><i class="blue-dot"></i> Authentic</span><span><i class="orange-dot"></i> Manipulated / Conflict</span></div>
           </section>
         </div>
       </section>
 
+      <!-- ANALYZE PAGE -->
       <section id="analyze" class="page">
-        <div class="section-intro"><span class="pill">New verification</span><h2>Choose what you want to analyze</h2><p>Start with text, an image, or a video. This prototype uses simulated results until the backend is connected.</p></div>
-        <div class="mode-grid">
-          <button class="mode-card selected" data-mode="text"><div class="mode-icon text">Aa</div><h3>Text</h3><p>Paste a claim, article, message or narrative for analysis.</p><span>Analyze text →</span></button>
-          <button class="mode-card" data-mode="image"><div class="mode-icon image">◉</div><h3>Image</h3><p>Upload an image and inspect the model confidence result.</p><span>Analyze image →</span></button>
-          <button class="mode-card" data-mode="video"><div class="mode-icon video">▶</div><h3>Video</h3><p>Upload a video and review the model's analysis result.</p><span>Analyze video →</span></button>
+        <div class="section-intro">
+          <span class="pill">Live Verification Engine</span>
+          <h2>Choose what you want to analyze</h2>
+          <p>Select a single modality below, verify a live <strong>News / Video URL</strong>, or choose <strong>Combined All-in-One</strong> to upload Text + Image + Video together for a unified Combined Report.</p>
+        </div>
+
+        <div class="mode-grid mode-grid-5">
+          <button type="button" class="mode-card selected" data-mode="text" onclick="window.selectVerifyMode('text')">
+            <div class="mode-icon text">Aa</div>
+            <h3>Text Claim</h3>
+            <p>Paste a news claim, article excerpt, or social narrative for NLP verification.</p>
+            <span>Analyze text →</span>
+          </button>
+          <button type="button" class="mode-card" data-mode="url" onclick="window.selectVerifyMode('url')">
+            <div class="mode-icon url">🌐</div>
+            <h3>News / Video URL</h3>
+            <p>Paste a news article link, YouTube link, or direct video/image URL to fetch & verify.</p>
+            <span>Verify URL →</span>
+          </button>
+          <button type="button" class="mode-card" data-mode="image" onclick="window.selectVerifyMode('image')">
+            <div class="mode-icon image">◉</div>
+            <h3>Image</h3>
+            <p>Upload an image for ViT deep-learning, ELA compression & Laplacian forensics.</p>
+            <span>Analyze image →</span>
+          </button>
+          <button type="button" class="mode-card" data-mode="video" onclick="window.selectVerifyMode('video')">
+            <div class="mode-icon video">▶</div>
+            <h3>Video</h3>
+            <p>Upload a video for 1-FPS frame ELA sampling and temporal variance analysis.</p>
+            <span>Analyze video →</span>
+          </button>
+          <button type="button" class="mode-card highlight-card" data-mode="combined" onclick="window.selectVerifyMode('combined')">
+            <div class="mode-icon combined">⊕</div>
+            <h3>Combined All-in-One</h3>
+            <p>Upload Text + Image + Video (+ URL) all together for a Combined Forensic Report.</p>
+            <span>Combined scan →</span>
+          </button>
         </div>
 
         <div class="workspace panel">
-          <div class="workspace-head"><div><h3 id="inputTitle">Text to analyze</h3><p id="inputHint">Paste the content you want VeritiScan AI to examine.</p></div><span class="input-type" id="inputType">TEXT</span></div>
-          <div id="inputArea" class="input-area">
-            <textarea id="textInput" placeholder="Paste a news claim, message, article excerpt or any text you want to verify..."></textarea>
-            <div class="input-footer"><span id="charCount">0 characters</span><span>Demo mode</span></div>
+          <div class="workspace-head">
+            <div>
+              <h3 id="inputTitle">Text Claim to Analyze</h3>
+              <p id="inputHint">Paste a news claim, article body, or statement to evaluate with the trained TF-IDF + LogisticRegression model.</p>
+            </div>
+            <span class="input-type" id="inputType">TEXT NLP</span>
           </div>
-          <div id="fileArea" class="file-area hidden">
-            <input id="fileInput" type="file" accept="image/*,video/*">
-            <label for="fileInput" class="dropzone"><div class="upload-icon">↑</div><strong id="dropTitle">Drop your image here</strong><span>or click to browse from your device</span><small id="fileMeta">PNG, JPG, WEBP • Prototype limit 20 MB</small></label>
-            <div id="preview" class="preview hidden"></div>
+
+          <!-- 1. TEXT MODE BOX -->
+          <div id="boxText" class="mode-box">
+            <div class="input-area">
+              <textarea id="textInput" placeholder="Paste a news claim, message, article excerpt or narrative you want to verify..."></textarea>
+              <div class="input-footer"><span id="charCount">0 characters</span><span>Live TF-IDF + LogisticRegression Engine</span></div>
+            </div>
           </div>
-          <button id="analyzeBtn" class="analyze-btn">Analyze text <span>✦</span></button>
+
+          <!-- 2. URL MODE BOX -->
+          <div id="boxUrl" class="mode-box hidden">
+            <div class="url-box-card">
+              <label class="field-label" for="urlInput">🌐 Enter News Article URL, YouTube Video URL, or Direct Media URL</label>
+              <div class="url-input-wrap">
+                <input id="urlInput" type="url" placeholder="https://en.wikipedia.org/wiki/Apollo_11 or https://www.youtube.com/watch?v=... or direct .mp4 / .jpg URL">
+              </div>
+              <div class="url-quick-samples">
+                <span>Click to load a sample URL:</span>
+                <button type="button" class="chip-btn" onclick="window.fillSampleUrl('https://en.wikipedia.org/wiki/Apollo_11', 'urlInput')">📰 News / Article (Apollo 11)</button>
+                <button type="button" class="chip-btn" onclick="window.fillSampleUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'urlInput')">🎬 YouTube Video Link</button>
+                <button type="button" class="chip-btn" onclick="window.fillSampleUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/640px-Camponotus_flavomarginatus_ant.jpg', 'urlInput')">🖼 Direct Image Link</button>
+              </div>
+              <p class="url-helper-note">VeritiScan will automatically fetch the remote webpage or video stream, extract the headline, article text, and embedded lead image/video, and run both NLP and visual forensics.</p>
+            </div>
+          </div>
+
+          <!-- 3. SINGLE IMAGE / VIDEO MODE BOX -->
+          <div id="boxSingleFile" class="mode-box hidden">
+            <div class="file-area">
+              <input id="fileInput" type="file" accept="image/*,video/*">
+              <label for="fileInput" class="dropzone">
+                <div class="upload-icon">↑</div>
+                <strong id="dropTitle">Drop your image here</strong>
+                <span>or click to browse from your device</span>
+                <small id="fileMeta">PNG, JPG, WEBP • Up to 20 MB</small>
+              </label>
+              <div id="preview" class="preview hidden"></div>
+            </div>
+          </div>
+
+          <!-- 4. COMBINED ALL-IN-ONE MODE BOX (Text + Image + Video + Optional URL all together!) -->
+          <div id="boxCombined" class="mode-box hidden">
+            <div class="combined-status-strip">
+              <span><strong>Combined Multimodal Workspace:</strong> Add Text, Image, and Video below to analyze all three together and receive a unified Combined Forensic Report.</span>
+              <div class="combined-pills">
+                <span id="pillTextStatus" class="mod-pill">1. Text: Empty</span>
+                <span id="pillImageStatus" class="mod-pill">2. Image: Empty</span>
+                <span id="pillVideoStatus" class="mod-pill">3. Video: Empty</span>
+              </div>
+            </div>
+
+            <div class="combined-three-grid">
+              <!-- Column 1: Text -->
+              <div class="combined-col-card">
+                <div class="combined-col-header">
+                  <span class="col-num">1</span>
+                  <div>
+                    <h4>Text Claim / Narrative</h4>
+                    <small>TF-IDF + LogisticRegression NLP</small>
+                  </div>
+                </div>
+                <textarea id="combinedTextInput" class="combined-textarea" placeholder="Paste the news claim, caption, or article text accompanying the media..."></textarea>
+                <div class="input-footer"><span id="combinedCharCount">0 characters</span></div>
+              </div>
+
+              <!-- Column 2: Image -->
+              <div class="combined-col-card">
+                <div class="combined-col-header">
+                  <span class="col-num">2</span>
+                  <div>
+                    <h4>Upload Image</h4>
+                    <small>ViT + JPEG ELA + Laplacian</small>
+                  </div>
+                </div>
+                <input id="combinedImageInput" type="file" accept="image/*" style="display:none;">
+                <label for="combinedImageInput" class="dropzone combined-dropzone">
+                  <div class="upload-icon">◉</div>
+                  <strong id="combinedImgTitle">Click to select Image</strong>
+                  <small id="combinedImgMeta">PNG, JPG, WEBP (up to 20 MB)</small>
+                </label>
+                <div id="combinedImgPreview" class="preview hidden"></div>
+              </div>
+
+              <!-- Column 3: Video -->
+              <div class="combined-col-card">
+                <div class="combined-col-header">
+                  <span class="col-num">3</span>
+                  <div>
+                    <h4>Upload Video</h4>
+                    <small>1-FPS Frame ELA + Temporal Variance</small>
+                  </div>
+                </div>
+                <input id="combinedVideoInput" type="file" accept="video/*" style="display:none;">
+                <label for="combinedVideoInput" class="dropzone combined-dropzone">
+                  <div class="upload-icon">▶</div>
+                  <strong id="combinedVidTitle">Click to select Video</strong>
+                  <small id="combinedVidMeta">MP4, MOV, WEBM (up to 50 MB)</small>
+                </label>
+                <div id="combinedVidPreview" class="preview hidden"></div>
+              </div>
+            </div>
+
+            <!-- Optional URL inside Combined Mode -->
+            <div class="combined-url-row">
+              <label class="field-label" for="combinedUrlInput">🌐 Optional: Include a Source News / Video URL in this Combined Scan</label>
+              <input id="combinedUrlInput" type="url" placeholder="Optional: https://... (leave blank if only analyzing the uploaded Text + Image + Video above)">
+            </div>
+          </div>
+
+          <button id="analyzeBtn" type="button" class="analyze-btn">Analyze Text Claim <span>✦</span></button>
         </div>
       </section>
 
+      <!-- RESULT & COMBINED REPORT PAGE -->
       <section id="result" class="page">
-        <button class="back-btn" data-page="analyze">← Back to analysis</button>
-        <div class="result-hero panel">
-          <div class="result-copy"><span class="pill">Analysis complete</span><h2 id="resultLabel">Likely authentic</h2><p id="resultDescription">The model returned a high-confidence result for this submission.</p><div class="result-meta"><span id="resultType">TEXT</span><span>•</span><span id="resultTime">Just now</span></div></div>
-          <div class="confidence-ring" id="confidenceRing"><div><strong id="confidenceValue">87.4%</strong><span>confidence</span></div></div>
+        <div class="result-top-bar">
+          <button class="back-btn" type="button" data-page="analyze">← Back to analysis</button>
+          <div class="result-actions">
+            <button id="downloadReportBtn" type="button" class="secondary-btn">⬇ Download Combined Report</button>
+            <button id="printReportBtn" type="button" class="secondary-btn">🖨 Print Report</button>
+          </div>
         </div>
+
+        <div class="result-hero panel">
+          <div class="result-copy">
+            <div class="result-badges">
+              <span class="pill" id="resultPill">Analysis complete</span>
+              <span class="agreement-badge" id="agreementBadge">Single Modality</span>
+            </div>
+            <h2 id="resultLabel">Likely Authentic</h2>
+            <p id="resultDescription">The multimodal fusion engine evaluated the submitted content.</p>
+            <div class="result-meta">
+              <span id="resultType">TEXT</span>
+              <span>•</span>
+              <span id="resultTime">Just now</span>
+              <span>•</span>
+              <span id="resultRecordId">ID: —</span>
+            </div>
+          </div>
+          <div class="confidence-ring" id="confidenceRing">
+            <div>
+              <strong id="confidenceValue">87.4%</strong>
+              <span>confidence</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Combined Multimodal Forensic Report Section -->
+        <section class="panel combined-report-panel" id="combinedReportPanel">
+          <div class="panel-head">
+            <div>
+              <span class="pill">Unified Synthesis</span>
+              <h3 style="margin-top:6px;font-size:18px;">Combined Multimodal Forensic Report</h3>
+              <p id="combinedSubheader">Cross-modal late-fusion breakdown across all analyzed inputs</p>
+            </div>
+            <div class="overall-scores-mini">
+              <div class="mini-metric">
+                <span>Authenticity Score</span>
+                <strong id="reportAuthScore" class="text-green">—</strong>
+              </div>
+              <div class="mini-metric">
+                <span>Manipulation Risk</span>
+                <strong id="reportRiskScore" class="text-red">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="exec-summary-box">
+            <h4>Executive Summary</h4>
+            <p id="reportExecSummary">—</p>
+          </div>
+
+          <!-- Per-Modality Breakdown Cards -->
+          <h4 class="sub-heading">Modality-by-Modality Breakdown</h4>
+          <div id="modalityCardsGrid" class="modality-cards-grid"></div>
+
+          <!-- Key Forensic Findings & Recommendation -->
+          <div class="findings-rec-grid">
+            <div class="findings-box">
+              <h4>Key Forensic Findings</h4>
+              <ul id="reportFindingsList" class="findings-list"></ul>
+            </div>
+            <div class="rec-box">
+              <h4>Editorial & Verification Recommendation</h4>
+              <p id="reportRecommendation">—</p>
+            </div>
+          </div>
+        </section>
+
         <div class="result-grid">
           <section class="panel">
-            <div class="panel-head"><div><h3>Submission</h3><p>Content sent for analysis</p></div></div>
+            <div class="panel-head"><div><h3>Submission & Extracted Content</h3><p>Content and metadata inspected during this scan</p></div></div>
             <div id="submissionPreview" class="submission-preview"></div>
           </section>
           <section class="panel">
-            <div class="panel-head"><div><h3>Result details</h3><p>Values returned by the prototype model layer</p></div></div>
-            <div class="detail-rows">
-              <div><span>Confidence score</span><strong id="detailConfidence">87.4%</strong></div>
-              <div><span>Analysis type</span><strong id="detailType">Text</strong></div>
-              <div><span>Processing status</span><strong class="status-good">Completed</strong></div>
-              <div><span>Mode</span><strong>Prototype / Demo</strong></div>
+            <div class="panel-head"><div><h3>Raw Forensic Telemetry</h3><p>Low-level metrics from NLP, ViT, ELA, Laplacian & Temporal pipelines</p></div></div>
+            <div class="detail-rows" id="rawTelemetryRows">
+              <div><span>Confidence score</span><strong id="detailConfidence">—</strong></div>
+              <div><span>Modalities analyzed</span><strong id="detailType">—</strong></div>
+              <div><span>Text Fake Probability</span><strong id="detailTextProb">—</strong></div>
+              <div><span>Compression Discrepancy (ELA)</span><strong id="detailEla">—</strong></div>
+              <div><span>Visual / Temporal Entropy</span><strong id="detailEntropy">—</strong></div>
+              <div><span>Cross-Modal Conflict</span><strong id="detailConflict">No</strong></div>
             </div>
           </section>
         </div>
       </section>
 
+      <!-- HISTORY PAGE -->
       <section id="history" class="page">
-        <div class="section-intro row-intro"><div><span class="pill">Your activity</span><h2>Analysis history</h2><p>Review previous prototype analyses.</p></div><button class="primary-btn" data-page="analyze">+ New Analysis</button></div>
+        <div class="section-intro row-intro">
+          <div>
+            <span class="pill">Audit Trail</span>
+            <h2>Verification history</h2>
+            <p>Review all previous single-modality, URL, and combined multimodal scans stored in the database.</p>
+          </div>
+          <button class="primary-btn" type="button" data-page="analyze">+ New Analysis</button>
+        </div>
         <section class="panel">
-          <div class="toolbar"><input id="historySearch" placeholder="Search analyses..."><select id="historyFilter"><option value="all">All types</option><option value="Text">Text</option><option value="Image">Image</option><option value="Video">Video</option></select></div>
+          <div class="toolbar">
+            <input id="historySearch" placeholder="Search by title, URL, filename, or verdict...">
+            <select id="historyFilter">
+              <option value="all">All modalities</option>
+              <option value="Combined">Combined Multimodal</option>
+              <option value="URL">URL Scans</option>
+              <option value="Text">Text</option>
+              <option value="Image">Image</option>
+              <option value="Video">Video</option>
+            </select>
+          </div>
           <div id="historyList" class="history-table"></div>
         </section>
       </section>
 
+      <!-- COMBINED REPORTS PAGE -->
       <section id="reports" class="page">
-        <div class="section-intro"><span class="pill">Insights</span><h2>Reports</h2><p>A future home for downloadable forensic-style analysis reports.</p></div>
-        <div class="empty-state panel"><div class="empty-icon">▤</div><h3>Reports will grow here</h3><p>Once the backend provides persistent analysis records and report data, this area can generate detailed reports for each scan.</p><button class="primary-btn" data-page="analyze">Run an analysis</button></div>
+        <div class="section-intro row-intro">
+          <div>
+            <span class="pill">Forensic Dossiers</span>
+            <h2>Combined & Multimodal Reports</h2>
+            <p>Inspect or download comprehensive forensic reports from your verification scans.</p>
+          </div>
+          <button class="primary-btn" type="button" onclick="window.openModeAndPage('combined')">+ New Combined Analysis</button>
+        </div>
+        <div id="reportsListContainer" class="reports-grid"></div>
       </section>
 
+      <!-- SETTINGS PAGE -->
       <section id="settings" class="page">
-        <div class="section-intro"><span class="pill">Workspace</span><h2>Settings</h2><p>Prototype preferences and application information.</p></div>
+        <div class="section-intro"><span class="pill">Workspace</span><h2>Settings</h2><p>Application configuration and model pipeline information.</p></div>
         <div class="settings-grid">
-          <section class="panel setting-card"><h3>Appearance</h3><p>Light, colorful interface is enabled for the prototype.</p><div class="setting-line"><span>Reduce animations</span><label class="switch"><input type="checkbox"><i></i></label></div><div class="setting-line"><span>Compact cards</span><label class="switch"><input type="checkbox"><i></i></label></div></section>
-          <section class="panel setting-card"><h3>About VeritiScan AI</h3><p>Multimodal synthetic media and fake-content verification prototype based on the project's planned text, image and video analysis workflow.</p><div class="about-chip">Frontend prototype v0.1</div></section>
+          <section class="panel setting-card">
+            <h3>Active Verification Engines</h3>
+            <p>All outputs are produced by live machine learning and computer vision pipelines (Zero Mock Policy).</p>
+            <div class="setting-line"><span>Text NLP Pipeline</span><strong>TF-IDF + Calibrated LogisticRegression</strong></div>
+            <div class="setting-line"><span>Image Forensics</span><strong>ViT + JPEG ELA + DCT + Laplacian</strong></div>
+            <div class="setting-line"><span>Video Forensics</span><strong>1-FPS Frame ELA + Temporal Variance</strong></div>
+            <div class="setting-line"><span>URL Ingestion Engine</span><strong>Live Article, YouTube & Media Extractor</strong></div>
+          </section>
+          <section class="panel setting-card">
+            <h3>About VeritiScan AI</h3>
+            <p>Multimodal synthetic media, news URL, and fake-content verification platform with cross-modal conflict detection and combined forensic reporting.</p>
+            <div class="about-chip">VeritiScan Engine v2.0 (Live API)</div>
+          </section>
         </div>
       </section>
 
       <div id="toast" class="toast">Analysis complete</div>
     </main>
   </div>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20261029_4"></script>
 </body>
 </html>

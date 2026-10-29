@@ -45,6 +45,7 @@ async def get_verification_history(
                 "confidence_score": 1,
                 "breakdown": 1,
                 "explanation": 1,
+                "combined_report": 1,
             }
         ).sort("timestamp", -1).limit(limit)
 

@@ -44,6 +44,8 @@ class VisionForensicService:
         """Thread-safely loads the Hugging Face vision transformer model."""
         with self._lock:
             try:
+                os.environ.setdefault("HF_HUB_OFFLINE", "1")
+                os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
                 from transformers import pipeline
                 logger.info("Loading Deep Learning Vision pipeline (AI Image Detection)...")
                 self._pipe = pipeline(
@@ -126,10 +128,10 @@ class VisionForensicService:
 
     # ── Main Image Analysis ────────────────────────────────────────────────
 
-    def analyze_image_ela(self, image_bytes: bytes) -> float:
+    def analyze_image_ela(self, image_bytes: bytes, is_editorial_thumbnail: bool = False) -> float:
         """
         Full image forensics pipeline:
-          1. ViT deep-learning classifier (AI-generated detection)
+          1. ViT deep-learning classifier (AI-generated detection, skipped for broadcast/article graphic thumbnails)
           2. ELA (editing/splicing detection)
           3. DCT frequency analysis (GAN artifact detection)
         Returns combined manipulation score [0.0, 1.0].
@@ -140,23 +142,24 @@ class VisionForensicService:
 
             # ── Stage 1: Deep Learning (ViT) ───────────────────────────────
             dl_score = None
-            with self._lock:
-                pipe = self._pipe
+            if not is_editorial_thumbnail:
+                with self._lock:
+                    pipe = self._pipe
 
-            if pipe:
-                result = pipe(original)
-                score_map = {item["label"].lower(): float(item["score"]) for item in result}
+                if pipe:
+                    result = pipe(original)
+                    score_map = {item["label"].lower(): float(item["score"]) for item in result}
 
-                for fake_label in ["artificial", "fake", "ai-generated", "generated"]:
-                    if fake_label in score_map:
-                        dl_score = float(np.clip(score_map[fake_label], 0.0, 1.0))
-                        break
-
-                if dl_score is None:
-                    for real_label in ["human", "real", "authentic"]:
-                        if real_label in score_map:
-                            dl_score = float(np.clip(1.0 - score_map[real_label], 0.0, 1.0))
+                    for fake_label in ["artificial", "fake", "ai-generated", "generated"]:
+                        if fake_label in score_map:
+                            dl_score = float(np.clip(score_map[fake_label], 0.0, 1.0))
                             break
+
+                    if dl_score is None:
+                        for real_label in ["human", "real", "authentic"]:
+                            if real_label in score_map:
+                                dl_score = float(np.clip(1.0 - score_map[real_label], 0.0, 1.0))
+                                break
 
             # ── Stage 2: ELA ────────────────────────────────────────────────
             ela = self._ela_score(original)
