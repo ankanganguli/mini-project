@@ -412,9 +412,13 @@
             <div class="setting-line"><span>URL Ingestion Engine</span><strong>Live Article, YouTube & Media Extractor</strong></div>
           </section>
           <section class="panel setting-card">
-            <h3>About VeritiScan AI</h3>
-            <p>Multimodal synthetic media, news URL, and fake-content verification platform with cross-modal conflict detection and combined forensic reporting.</p>
-            <div class="about-chip">VeritiScan Engine v2.0 (Live API)</div>
+            <h3>Backend API Connection (Render / Cloud)</h3>
+            <p>Leave blank when visiting directly on your Render URL. If viewing from Vercel, paste your Render URL (e.g. <code>https://mini-project-xxxx.onrender.com</code>).</p>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <input id="apiBaseInput" type="url" class="url-field" style="padding:10px 12px;font-size:13px;" placeholder="https://your-service.onrender.com (leave empty for same-domain)" />
+              <button class="primary-btn small-btn" type="button" onclick="window.saveApiBaseUrl()">Save URL</button>
+            </div>
+            <div class="about-chip" style="margin-top:12px;">VeritiScan Engine v2.0 (Live API)</div>
           </section>
         </div>
       </section>
@@ -422,6 +426,6 @@
       <div id="toast" class="toast">Analysis complete</div>
     </main>
   </div>
-  <script src="js/app.js?v=20261029_4"></script>
+  <script src="js/app.js?v=20261029_5"></script>
 </body>
 </html>

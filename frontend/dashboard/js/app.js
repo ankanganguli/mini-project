@@ -8,6 +8,24 @@ const state = {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
+function getApiUrl(path) {
+  const base = (localStorage.getItem("API_BASE_URL") || "").trim().replace(/\/+$/, "");
+  return base ? `${base}${path}` : path;
+}
+
+function saveApiBaseUrl() {
+  const val = ($("#apiBaseInput")?.value || "").trim().replace(/\/+$/, "");
+  if (val) {
+    localStorage.setItem("API_BASE_URL", val);
+    showToast("Connected to Backend: " + val);
+  } else {
+    localStorage.removeItem("API_BASE_URL");
+    showToast("Using default same-origin Backend API");
+  }
+  fetchMetricsAndHistory();
+}
+window.saveApiBaseUrl = saveApiBaseUrl;
+
 function showPage(page) {
   $$(".page").forEach(p => p.classList.toggle("active", p.id === page));
   $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.page === page));
@@ -280,7 +298,7 @@ if ($("#analyzeBtn")) {
     btn.innerHTML = "Running Multimodal Forensic Pipelines... <span>◌</span>";
 
     try {
-      const response = await fetch("/api/v1/verify", {
+      const response = await fetch(getApiUrl("/api/v1/verify"), {
         method: "POST",
         body: formData
       });
@@ -528,9 +546,13 @@ function updateDashboardStats() {
 
 async function fetchMetricsAndHistory() {
   try {
+    const apiInput = $("#apiBaseInput");
+    if (apiInput && !apiInput.value) {
+      apiInput.value = localStorage.getItem("API_BASE_URL") || "";
+    }
     const [mRes, hRes] = await Promise.all([
-      fetch("/api/v1/metrics"),
-      fetch("/api/v1/history?limit=100")
+      fetch(getApiUrl("/api/v1/metrics")),
+      fetch(getApiUrl("/api/v1/history?limit=100"))
     ]);
     if (mRes.ok) {
       state.metrics = await mRes.json();
