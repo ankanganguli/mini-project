@@ -9,7 +9,7 @@ class DecisionFusionEngine:
     Combined Multimodal Report.
     """
 
-    FAKE_THRESHOLD = 0.65
+    FAKE_THRESHOLD = 0.50
 
     def fuse(self, text_prob: Optional[float], visual_prob: Optional[float]) -> Tuple[str, float, str, bool]:
         """
@@ -67,7 +67,7 @@ class DecisionFusionEngine:
 
         return verdict, confidence_score, explanation, cross_modal_conflict
 
-    def _single_modality_verdict(self, p_fake: float, threshold: float = 0.65) -> Tuple[str, float]:
+    def _single_modality_verdict(self, p_fake: float, threshold: float = 0.50) -> Tuple[str, float]:
         if p_fake >= threshold:
             verdict = "Manipulated Media"
             conf = round(p_fake * 100.0, 2)
@@ -96,14 +96,17 @@ class DecisionFusionEngine:
 
         # 1. Text Modality
         if text_prob is not None:
-            t_verdict, t_conf = self._single_modality_verdict(text_prob, threshold=0.65)
+            t_verdict, t_conf = self._single_modality_verdict(text_prob, threshold=0.50)
             t_auth = round((1.0 - text_prob) * 100.0, 2)
             word_count = (text_meta or {}).get("word_count", 0)
             source_label = (text_meta or {}).get("source", "Direct Input")
+            fc_reason = (text_meta or {}).get("fact_check_reason")
             t_summary = (
-                f"NLP TF-IDF + LogisticRegression classifier evaluated {word_count} words "
+                f"NLP + Live Fact-Check evaluated {word_count} words "
                 f"({source_label}): {t_verdict} ({t_auth:.1f}% authenticity, {text_prob * 100:.1f}% deception risk)."
             )
+            if fc_reason:
+                t_summary += f" Fact-Check: {fc_reason}"
             modality_reports.append(
                 ModalitySummary(
                     modality="Text",
@@ -117,30 +120,33 @@ class DecisionFusionEngine:
                         "real_probability": round(1.0 - text_prob, 4),
                         "word_count": word_count,
                         "source": source_label,
+                        "fact_check_reason": fc_reason,
                     },
                 )
             )
             weighted_scores.append(("Text", text_prob, 0.50))
-            if text_prob >= 0.65:
-                key_findings.append(
-                    f"Textual NLP analysis detected deceptive/sensational linguistic patterns (fake probability: {text_prob * 100:.1f}%)."
-                )
+            if text_prob >= 0.50:
+                finding_msg = f"Textual & Fact-Check analysis flagged deceptive or factually false claim (fake probability: {text_prob * 100:.1f}%)."
+                if fc_reason:
+                    finding_msg += f" {fc_reason}"
+                key_findings.append(finding_msg)
             else:
-                key_findings.append(
-                    f"Textual NLP analysis found claim language consistent with factual reporting (authenticity: {t_auth:.1f}%)."
-                )
+                finding_msg = f"Textual & Fact-Check analysis found claim consistent with verified facts (authenticity: {t_auth:.1f}%)."
+                if fc_reason:
+                    finding_msg += f" {fc_reason}"
+                key_findings.append(finding_msg)
 
         # 2. Image Modality
         if image_scores is not None:
             img_ela = float(image_scores.get("ela", 0.0))
             img_lap = float(image_scores.get("laplacian", 0.0))
-            img_prob = round(min((img_ela + img_lap) / 2.0, 1.0), 4)
-            i_verdict, i_conf = self._single_modality_verdict(img_prob, threshold=0.55)
+            img_prob = round(min(max(img_ela, 0.60 * img_ela + 0.40 * img_lap, 0.45 * img_ela + 0.55 * img_lap), 1.0), 4)
+            i_verdict, i_conf = self._single_modality_verdict(img_prob, threshold=0.50)
             i_auth = round((1.0 - img_prob) * 100.0, 2)
             img_name = (image_meta or {}).get("filename", "Image Asset")
             i_summary = (
-                f"Image forensics (ViT + ELA + DCT + Laplacian) on '{img_name}': {i_verdict} "
-                f"(ELA/ViT={img_ela:.3f}, Sharpness anomaly={img_lap:.3f})."
+                f"Image forensics (SRM Noise + Block ELA + EXIF + DCT + Laplacian) on '{img_name}': {i_verdict} "
+                f"(Forensic/ELA={img_ela:.3f}, Sharpness anomaly={img_lap:.3f})."
             )
             modality_reports.append(
                 ModalitySummary(
@@ -159,9 +165,9 @@ class DecisionFusionEngine:
                 )
             )
             weighted_scores.append(("Image", img_prob, 0.35))
-            if img_prob >= 0.55:
+            if img_prob >= 0.50:
                 key_findings.append(
-                    f"Image forensics on '{img_name}' flagged splicing/AI generation artifacts (ELA/ViT: {img_ela * 100:.1f}%, Laplacian: {img_lap * 100:.1f}%)."
+                    f"Image forensics on '{img_name}' flagged splicing/AI generation artifacts (Forensic Risk: {img_prob * 100:.1f}%, ELA/SRM: {img_ela * 100:.1f}%, Laplacian: {img_lap * 100:.1f}%)."
                 )
             else:
                 key_findings.append(
@@ -293,14 +299,17 @@ class DecisionFusionEngine:
 
         # Build executive summary & recommendation
         mod_names_str = ", ".join(modalities_list)
+        fc_reason_top = (text_meta or {}).get("fact_check_reason")
         if cross_modal_conflict:
-            high_mods = [name for name, p, _ in weighted_scores if p >= 0.55]
-            low_mods = [name for name, p, _ in weighted_scores if p < 0.55]
+            high_mods = [name for name, p, _ in weighted_scores if p >= 0.50]
+            low_mods = [name for name, p, _ in weighted_scores if p < 0.50]
             explanation = (
                 f"Cross-modal contradiction detected across [{mod_names_str}]: "
                 f"{', '.join(high_mods) or 'One modality'} indicates high manipulation risk while "
                 f"{', '.join(low_mods) or 'another modality'} appears authentic."
             )
+            if fc_reason_top:
+                explanation += f" Fact-Check: {fc_reason_top}"
             recommendation = (
                 "HOLD FOR EDITORIAL REVIEW: Conflicting signals between modalities often indicate "
                 "authentic media paired with a fabricated narrative (or vice-versa). Verify original source provenance."
@@ -310,6 +319,8 @@ class DecisionFusionEngine:
                 f"Combined analysis across [{mod_names_str}] strongly indicates manipulated or deceptive content "
                 f"(Manipulation Risk: {overall_risk:.1f}%, Confidence: {overall_confidence:.1f}%)."
             )
+            if fc_reason_top:
+                explanation += f" Fact-Check: {fc_reason_top}"
             recommendation = (
                 "FLAG AS MANIPULATED / HIGH RISK: Multiple forensic indicators exceed manipulation thresholds. "
                 "Do not publish or share without independent source corroboration."
@@ -319,6 +330,8 @@ class DecisionFusionEngine:
                 f"Combined analysis across [{mod_names_str}] indicates the submission is likely authentic "
                 f"(Authenticity Score: {overall_authenticity:.1f}%, Confidence: {overall_confidence:.1f}%)."
             )
+            if fc_reason_top:
+                explanation += f" Fact-Check: {fc_reason_top}"
             recommendation = (
                 "CLEARED / LIKELY AUTHENTIC: Forensic checks across all submitted modalities show natural "
                 "compression, consistent temporal frames, and credible linguistic structure."

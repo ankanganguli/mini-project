@@ -165,6 +165,8 @@ async def verify_content(
         text_meta = {
             "word_count": len(effective_text.split()) if effective_text else 0,
             "source": text_source_label,
+            "fact_check_reason": text_result.get("fact_check_reason"),
+            "is_editorial_url": bool(is_editorial_thumb),
         }
 
     image_scores = None

@@ -1,11 +1,12 @@
 """
 Text Inference Service
 ======================
-Uses the trained sklearn pipeline (TF-IDF + LogisticRegression) stored at
-artifacts/model_pipeline.pkl, with de-biasing against WELFake scraper chrome
-tokens (such as 'news', 'video', 'watch', 'today', 'image', 'youtube') and
-Reuters-dateline intercept calibration so real global/Indian news headlines
-and articles are not falsely penalized for lacking a '(Reuters)' dateline.
+Combines:
+  1. Trained sklearn pipeline (TF-IDF + LogisticRegression) stored at artifacts/model_pipeline.pkl
+     with de-biasing against WELFake scraper chrome tokens and Reuters-dateline intercept calibration.
+  2. Live Fact-Checking & Encyclopedic Claim Verification (Wikipedia API + Grounded Fact Checker)
+     so factual falsehoods (e.g. "Kylian Mbappe won the Ballon d'Or", "Earth is flat") are
+     verified against real-world facts rather than just word-frequency style.
 """
 import os
 import re
@@ -13,7 +14,9 @@ import threading
 import logging
 import joblib
 import numpy as np
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
+
+from backend.app.services.fact_check_service import fact_check_service
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +46,7 @@ _SENSATIONAL_PATTERNS = re.compile(
 
 class TextInferenceService:
     """
-    Service for text-based NLP classification.
-    Loads the trained sklearn pipeline from artifacts/ and returns calibrated
-    probability that the input text is fake (p_fake) or real (p_real).
+    Service for text-based NLP classification + Live Encyclopedic Fact Verification.
     """
 
     def __init__(self):
@@ -71,10 +72,10 @@ class TextInferenceService:
                 logger.error(f"Failed to load NLP pipeline: {e}", exc_info=True)
                 self._pipeline = None
 
-    def predict(self, text: str, is_verified_source: bool = False) -> Optional[Dict[str, float]]:
+    def predict(self, text: str, is_verified_source: bool = False) -> Optional[Dict[str, Any]]:
         """
-        Returns calibrated probability estimates for the input text.
-        Output: { "p_fake": float, "p_real": float } or None if model unavailable.
+        Returns calibrated probability estimates and optional fact-check reason for the input text.
+        Output: { "p_fake": float, "p_real": float, "fact_check_reason": Optional[str] }
         """
         with self._lock:
             pipeline = self._pipeline
@@ -99,8 +100,8 @@ class TextInferenceService:
                 cleaned = raw_text
 
             word_count = len(raw_text.split())
-            if word_count < 4:
-                return {"p_fake": 0.25, "p_real": 0.75}
+            if word_count < 2:
+                return {"p_fake": 0.25, "p_real": 0.75, "fact_check_reason": None}
 
             # 2. Compute feature log-odds from the trained TF-IDF + LogisticRegression pipeline
             if hasattr(pipeline, "named_steps") and "features" in pipeline.named_steps and "classifier" in pipeline.named_steps:
@@ -109,11 +110,11 @@ class TextInferenceService:
                 X = feats.transform([cleaned])
                 dot = float((X @ clf.coef_.T)[0, 0])
                 # Neutralize WELFake's +1.0504 Reuters-dateline intercept bias
-                logit = (dot - 0.85) * 0.75
+                logit = (dot - 0.65) * 0.80
             else:
                 proba = pipeline.predict_proba([cleaned])[0]
                 p_raw = float(np.clip(proba[1], 1e-4, 1.0 - 1e-4))
-                logit = float(np.log(p_raw / (1.0 - p_raw)) - 1.5)
+                logit = float(np.log(p_raw / (1.0 - p_raw)) - 1.2)
 
             # 3. Evaluate explicit sensationalist / conspiracy / hoax linguistic signals
             sensational_hits = len(_SENSATIONAL_PATTERNS.findall(raw_text))
@@ -127,12 +128,30 @@ class TextInferenceService:
             if is_verified_source and sensational_hits == 0:
                 logit -= 1.15
 
-            p_fake = float(1.0 / (1.0 + np.exp(-logit)))
+            p_fake_style = float(1.0 / (1.0 + np.exp(-logit)))
+
+            # 5. Live Factual Claim Verification (for claims not coming from a verified publisher URL)
+            fact_reason = None
+            p_fake = p_fake_style
+            if not is_verified_source and sensational_hits == 0:
+                fact_res = fact_check_service.verify_claim(raw_text)
+                if fact_res is not None:
+                    fc_prob = float(fact_res["p_fake"])
+                    fact_reason = fact_res.get("reason")
+                    if fact_res.get("is_fake"):
+                        # Factual contradiction overrides stylistic neutrality
+                        p_fake = max(fc_prob, 0.75 * fc_prob + 0.25 * p_fake_style)
+                    else:
+                        # Factually verified true claim
+                        p_fake = min(p_fake_style, 0.70 * fc_prob + 0.30 * p_fake_style)
+
+            p_fake = float(np.clip(p_fake, 0.01, 0.99))
             p_real = 1.0 - p_fake
 
             return {
                 "p_fake": round(p_fake, 4),
                 "p_real": round(p_real, 4),
+                "fact_check_reason": fact_reason,
             }
         except Exception as e:
             logger.error(f"Error during text prediction: {e}", exc_info=True)
