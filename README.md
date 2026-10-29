@@ -12,3 +12,4 @@ A production-grade multimodal authenticity verification platform empowering news
 - **Backend**: FastAPI, PyTorch, Scikit-learn, OpenCV, Uvicorn
 - **Frontend**: Modern responsive web dashboard (HTML/CSS/JS)
 - **Containerization**: Docker, Docker Compose, Nginx
+ BACKEND: https://mini-project-2-op98.onrender.com/
